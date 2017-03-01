@@ -1,0 +1,4 @@
+TOOLS_DIR=@@PREFIX_BIN@@
+
+*/@@INTERVAL@@ * * * * "${TOOLS_DIR}"/@@EXEC_PREFIX@@gdrive-sync.sh cron
+

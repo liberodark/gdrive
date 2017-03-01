@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Exec=@@PREFIX_BIN@@/@@EXEC_PREFIX@@gdrive-sync.sh
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+Name[it]=GDrive sync
+Name=GDrive sync
+Comment[it]=Sync Google Drive via grive2
+Comment=Sync Google Drive via grive2

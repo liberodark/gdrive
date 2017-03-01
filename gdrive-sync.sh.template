@@ -1,0 +1,172 @@
+#!/bin/bash
+
+
+##
+## Description
+##
+## Sync Google Drive via grive (grive2) @see http://bit.ly/28InB2O.
+## Sync runs every INTERVAL.
+## Sync is stopped (killed) if it does not complete within TIMEOUT.
+## Google Drive (gdrive) home is define in GDRIVE_DIR.
+## A log of the last sync only is kept in GDRIVE_LOG.
+##
+
+
+##
+## Usage
+##
+## > grive-sync.sh
+##
+
+##
+## ChangeLog
+##
+## @author Dr. John X Zoidberg <drjxzoidberg@gmail.com>
+## @version 2.0.1
+## @date 2017-02-03
+##  - added timeout for sync.
+##
+## @author Dr. John X Zoidberg <drjxzoidberg@gmail.com>
+## @version 2.0.0
+## @date 2016-07-29
+##  - to be used from startup (login) applications
+##
+
+
+
+##
+## Settings
+##
+SETTINGS=@@SETTINGS@@
+
+
+##
+## Google Drive directory.
+##
+GDRIVE_DIR=@@GDRIVE_DIR@@
+
+##
+## Log file.
+##
+GDRIVE_LOG=@@GDRIVE_LOG@@
+
+
+##
+## Interval in sleep format.
+##
+INTERVAL=@@INTERVAL@@m
+
+##
+## Timeout for sync (minutes). 
+##
+TIMEOUT=@@TIMEOUT@@
+
+
+if [ -r "${SETTINGS}" ] ; then
+  . "${SETTINGS}"
+fi
+
+
+
+##
+## Remove lock.
+##
+removeLock ()
+{
+  kill $1
+  lockfile-remove "$2"
+}
+
+timeout ()
+{
+    local pid
+    pid=$!
+    [ -z "$1" ] && return 0
+
+    local timeout
+    timeout=${2:-${TIMEOUT}}
+    timeout=$((timeout * 60))
+
+    while [ ${timeout} -ge 0 ] ; do
+        sleep 1s
+        if ! lockfile-check "${GDRIVE_LOG}" ; then
+            break
+        fi
+        ## else...
+        timeout=$((timeout - 1))
+	if [ ${timeout} -le 0 ] ; then
+            echo "[WW] $(date +%Y%m%d%H%M%S) sync (${pid}) timeout." >>"${GDRIVE_LOG}"
+            kill ${pid}
+	    break
+	fi
+    done
+}
+
+##
+## Runs forever.
+##
+sync ()
+{
+  touch "${GDRIVE_LOG}"
+  while true ; do
+
+    if lockfile-check "${GDRIVE_LOG}" ; then
+      continue
+    fi
+
+    ## else
+
+    lockfile-create "${GDRIVE_LOG}"
+    lockfile-touch "${GDRIVE_LOG}" &
+    ## Save the PID of the lockfile-touch process
+    BADGER=$!
+
+    cd "${GDRIVE_DIR}"
+    RES=$?
+    if [ ${RES} -ne 0 ] ; then
+      echo "[EE] $(date +%Y%m%d%H%M%S) cannot cd (${RES}) gdrive dir. '${GDRIVE_DIR}' [\${GDRIVE_DIR}]'." >"${GDRIVE_LOG}"
+      continue 
+    fi
+
+    ## else
+
+    (
+        echo "[II] $(date +%Y%m%d%H%M%S) start sync." >"${GDRIVE_LOG}"
+        grive >>"${GDRIVE_LOG}" 2>&1
+        RES=$?
+        if [ ${RES} -ne 0 ] ; then
+          echo "[EE] $(date +%Y%m%d%H%M%S) cannot sync (${RES})." >>"${GDRIVE_LOG}"
+          echo "[EE] some env. vars to help in troubleshooting:" >>"${GDRIVE_LOG}"
+          echo "[EE]   \${GDRIVE_DIR}: '${GDRIVE_DIR}'." >>"${GDRIVE_LOG}"
+          echo "[EE]   \$(pwd): '$(pwd)'." >>"${GDRIVE_LOG}"
+          echo "[EE]   \${HOME}: '${HOME}'." >>"${GDRIVE_LOG}"
+	else
+          echo "[II] $(date +%Y%m%d%H%M%S) sync ok." >>"${GDRIVE_LOG}"
+        fi
+	echo "[II] $(date +%Y%m%d%H%M%S) end sync." >>"${GDRIVE_LOG}"
+    ) &
+    SYNC_PID=$!
+    timeout "${SYNC_PID}" &
+    wait ${SYNC_PID}
+
+    removeLock "${BADGER}" "${GDRIVE_LOG}"
+
+    if [ "$1" = "cron" ] ; then
+        break
+    fi
+
+    sleep ${INTERVAL}
+
+  done
+}
+
+
+
+## #####
+##
+## MAIN
+##
+## #####
+
+sync "$@"
+

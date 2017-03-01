@@ -1,0 +1,19 @@
+##
+## ChangeLog
+##
+## @author Dr. John X Zoidberg <drjxzoidberg@gmail.com>
+## @version 1.0.0
+## @date 2017-02-21
+##
+
+
+
+PREFIX=/usr/local
+PREFIX_BIN="${PREFIX}/bin"
+EXEC_PREFIX=
+INTERVAL=5
+TIMEOUT=5
+GDRIVE_DIR="~/gdrive"
+GDRIVE_LOG="~/.gdrive-sync.log"
+SETTINGS="~/.gdrive-sync.settings"
+
