@@ -30,7 +30,7 @@ PREFIX_BIN="\${PREFIX}/bin"
 EXEC_PREFIX=
 INTERVAL=5
 TIMEOUT=5
-GDRIVE_DIR="~/gdrive"
+GDRIVE_DIR="~/Google Drive"
 GDRIVE_LOG="~/.gdrive-sync.log"
 SETTINGS="~/.gdrive-sync.settings"
 EOD
